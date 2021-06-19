@@ -1,0 +1,108 @@
+---
+title: "Fostanes Final Project"
+author: "Christian Fostanes"
+date: "6/15/2021"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(ggstatsplot)
+library(tidyr)
+library(dplyr)
+library(reshape2)
+```
+
+## Big Question - Does Video Game Genre Affect Sales in Different Regions?
+
+```{r Pre-Processing}
+# Reading the data and convert some columns.
+vgs.dat <- read.csv("vgsales.csv")
+vgs.dat$Platform <- as.factor(vgs.dat$Platform)
+vgs.dat$Genre <- as.factor(vgs.dat$Genre)
+vgs.dat$Publisher <- as.factor(vgs.dat$Publisher)
+vgs.dat$Year <- as.factor(vgs.dat$Year)
+
+# Checks if there are any missing values
+sum(is.na(vgs.dat))
+
+# Remove outliers
+# NA
+outliers <- boxplot(vgs.dat$NA_Sales, plot = FALSE)$out
+vgs.dat <- vgs.dat[-c(which(vgs.dat$NA_Sales %in% outliers)),]
+# EU
+outliers <- boxplot(vgs.dat$EU_Sales, plot = FALSE)$out
+vgs.dat <- vgs.dat[-c(which(vgs.dat$EU_Sales %in% outliers)),]
+# JP
+outliers <- boxplot(vgs.dat$JP_Sales, plot = FALSE)$out
+vgs.dat <- vgs.dat[-c(which(vgs.dat$JP_Sales %in% outliers)),]
+# Other Regions
+outliers <- boxplot(vgs.dat$Other_Sales, plot = FALSE)$out
+vgs.dat <- vgs.dat[-c(which(vgs.dat$Other_Sales %in% outliers)),]
+# Global
+outliers <- boxplot(vgs.dat$Global_Sales, plot = FALSE)$out
+vgs.dat <- vgs.dat[-c(which(vgs.dat$Global_Sales %in% outliers)),]
+
+summary(vgs.dat)
+```
+
+## Plots
+```{r}
+# Box Plots for Different Regions
+ggplot(vgs.dat, aes(NA_Sales, Genre, fill = Genre)) + geom_boxplot() + ggtitle("North America Sales Distribution by Genre")
+ggplot(vgs.dat, aes(EU_Sales, Genre, fill = Genre)) + geom_boxplot() + ggtitle("Europe Sales Distribution by Genre")
+ggplot(vgs.dat, aes(JP_Sales, Genre, fill = Genre)) + geom_boxplot() + ggtitle("Japan Sales Distribution by Genre")
+ggplot(vgs.dat, aes(Other_Sales, Genre, fill = Genre)) + geom_boxplot() + ggtitle("Other Regions Sales Distribution by Genre")
+ggplot(vgs.dat, aes(Global_Sales, Genre, fill = Genre)) + geom_boxplot() + ggtitle("Global Sales Distribution by Genre")
+```
+
+```{r plots}
+vgs.dat$Year <- as.numeric(vgs.dat$Year)
+# Box Plots for Different Regions
+vgs.dat %>% pivot_longer(NA_Sales:Global_Sales, names_to = "Regions", values_to = "Sales") %>% ggplot(aes(Sales, as.factor(Genre), fill = Genre)) + geom_boxplot() + facet_wrap(vars(Regions)) + ggtitle("Different Regions Sales Distribution by Genre")
+
+# NA Plots
+ggplot(vgs.dat, aes("", NA_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("North America Sales by Genre") + facet_wrap(~Genre) + xlab("Genres") + ggtitle("Most Popular Genre in North America")
+ggplot(vgs.dat, aes(Year, NA_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Yearly North America Sales by Genre")
+
+# EU Plots
+ggplot(vgs.dat, aes("", EU_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Europe Sales by Genre") + facet_wrap(~Genre) + xlab("Genres") + ggtitle("Most Popular Genre in Europe")
+ggplot(vgs.dat, aes(Year, EU_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Yearly Europe Sales by Genre")
+
+# JP Plots
+ggplot(vgs.dat, aes("", JP_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Japan Sales by Genre") + facet_wrap(~Genre) + xlab("Genres") + ggtitle("Most Popular Genre in Japan")
+ggplot(vgs.dat, aes(Year, JP_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Yearly Japan Sales by Genre")
+
+# Other Regions Plots
+ggplot(vgs.dat, aes("", Other_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Other Regions Sales by Genre") + facet_wrap(~Genre) + xlab("Genres") + ggtitle("Most Popular Genre in Other Regions")
+ggplot(vgs.dat, aes(Year, Other_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Yearly Other Regions Sales by Genre")
+
+# Global Plots
+ggplot(vgs.dat, aes("", Global_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Global Sales by Genre") + facet_wrap(~Genre) + xlab("Genres") + ggtitle("Most Popular Genre")
+ggplot(vgs.dat, aes(Year, Global_Sales, fill = Genre)) + geom_bar(stat = "identity") + ggtitle("Yearly Global Sales by Genre")
+```
+
+```{r regression}
+vgs.dat <- glm (as.factor(Genre) ~ NA_Sales + EU_Sales + JP_Sales + Other_Sales + Global_Sales, data = vgs.dat, family = binomial)
+summary(vgs.dat)
+```
+
+## Report
+
+The data set I chose depicts different video game titles released from 1980 to 2020 and their sales in different regions. I chose this data set because I enjoy playing video games as a hobby and I was curious if certain video game genres are more popular in certain regions than others. This data set is perfect fit for answering that question.
+
+Before plotting the data, I first checked if the data set has any missing values. Next, I checked for outliers and removed those from the data set.
+
+A bar graph was the appropriate type of plot because I wanted to know which genres are the most popular in different regions. My premilinary conclusion was genre does have an effect on sales in different regions.
+
+Based on the data plots, here are my findings:
+
+* Most popular genre in North America and Europe is Action, while the least popular is Strategy
+* Most popular genre in Japan is Role-Playing, least popular is Shooter
+* As for other regions, it has the same results as North America and Europe. The most popular genre is Action and the least popular is Strategy.
+* Overall, the most popular video game genre is Action, while the least popular is Strategy
+* Sales peaked during the period of 2005-2010
+
+
+Based on my findings, I can say that there is a connection between video game genre and sales in different regions. Western regions such as North America and Europe prefer the Action video game genre and Japanese gamers prefer the Role-Playing genre. Overall, the most popular video game genre in the world is action, while the least popular is Strategy. While it's not definitive, I believe cultures play a part when it comes to genre popularity. Shooter games are the least popular genre in Japan. Shooter games are often violent and Japanese people are not a fan of violence. If you look at popular games that cam from Japan, they often aren't violent and are family friendly. Western media in general is very action packed. Most popular movies and shows from Western regions fall under the Action genre, so it's no surprise that most popular video game genre is also Action. The peak of overall sales during the 2005-2010 period is due to the number of video game titles releases during that period.
